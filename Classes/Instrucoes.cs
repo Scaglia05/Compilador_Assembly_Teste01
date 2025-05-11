@@ -95,7 +95,7 @@ namespace Compilador_Assembly_Teste01.Classes {
         }
 
 
-        public void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels) {
+        public void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels, int pc) {
             switch (instrucao) {
                 case "add":
                     registradores[Operands[0]] = registradores[Operands[1]] + registradores[Operands[2]];
@@ -177,7 +177,7 @@ namespace Compilador_Assembly_Teste01.Classes {
                         registradores["PC"] = ProcessarSalto(Operands, registradores["PC"], labels);
                     } else {
                         // Caso contrário, o PC é incrementado normalmente
-                        registradores["PC"] += 4;
+                        registradores["PC"] = ++pc;
                     }
                     break;
 
@@ -187,7 +187,7 @@ namespace Compilador_Assembly_Teste01.Classes {
                         registradores["PC"] = ProcessarSalto(Operands, registradores["PC"], labels);
                     } else {
                         // Caso contrário, o PC é incrementado normalmente
-                        registradores["PC"] += 4;
+                        registradores["PC"] = ++pc;
                     }
                     break;
 

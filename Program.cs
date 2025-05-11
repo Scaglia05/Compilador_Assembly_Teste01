@@ -100,22 +100,22 @@ while (pc < linhasPrograma.Length) {
     // Verifica se a instrução e operandos foram corretamente extraídos
     if (!string.IsNullOrEmpty(instrucao) && operandos != null) {
         // Executar a instrução
-        instrucoes.Executar(instrucao, operandos, registradores, memoria, labels);
+        instrucoes.Executar(instrucao, operandos, registradores, memoria, labels, pc);
 
         if (instrucao.StartsWith("j")) {
-            string label = operandos.FirstOrDefault();  // A label para o salto
+            string label = operandos.FirstOrDefault();
             if (labels.ContainsKey(label)) {
-                pc = labels[label];  // Atualiza o PC para o endereço da label de destino
+                pc = labels[label];
             } else {
                 Console.WriteLine($"Erro: Label {label} não encontrada.");
                 break;
             }
         } else if (instrucao.StartsWith("b")) {
-            // O registrador "PC" já foi atualizado dentro da instrução "beq" ou "bne"
-            pc = registradores["PC"];
+            pc = registradores["PC"]; 
         } else {
-            pc++;  // Instrução comum
+            pc++;
         }
+
     } else {
         Console.WriteLine($"Erro ao processar a linha: {linha}. A instrução não foi válida.");
         break;

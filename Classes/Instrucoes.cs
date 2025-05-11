@@ -1,47 +1,238 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Compilador_Assembly_Teste01.Classes {
     public class Instrucoes {
 
         public static Dictionary<string, int> ParseWordsToArray(string filePath, int TipoI, int TipoJ, int TipoR) {
-            var resultado = new Dictionary<string, int>(); // Agora o dicionário mapeia o conteúdo da linha + a instrução para o número de ciclos
+            var resultado = new Dictionary<string, int>();
             var linhas = File.ReadAllLines(filePath);
 
             foreach (var linha in linhas) {
-                string linhaLimpa = linha.Trim();
+                string linhaLimpa = linha.Split('#')[0].Trim(); // Remove comentários
 
-                // Ignora linhas vazias ou comentários
-                if (string.IsNullOrEmpty(linhaLimpa) || linhaLimpa.StartsWith("#"))
+                if (string.IsNullOrEmpty(linhaLimpa))
                     continue;
 
-                // Quebra a linha em palavras
-                var tokens = linhaLimpa.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                if (tokens.Length == 0)
+                var (instrucao, operandos) = ParseInstrucao(linhaLimpa); // Usa o parser robusto
+
+                if (string.IsNullOrEmpty(instrucao))
                     continue;
 
-                string instrucao = tokens[0].ToLower(); // Instrução em minúsculo para garantir compatibilidade com o dicionário
-
+                // Verifica o tipo da instrução
                 if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out string tipo)) {
+                    // Ajuste no cálculo dos ciclos
                     int ciclos = tipo switch {
                         "R" => TipoR,
                         "I" => TipoI,
                         "J" => TipoJ,
-                        _ => 0
+                        _ => 1
                     };
 
-                    // Mapeia a linha lida + a instrução diretamente para o número de ciclos
-                    resultado[$"{linhaLimpa} ==> ({instrucao})"] = ciclos;
+                    // Formatar a chave com a instrução e operandos
+                    string chaveFormatada = $"{instrucao} ({string.Join(", ", operandos)})";
+
+                    // Adicionar ao dicionário
+                    resultado[$"{linhaLimpa} ==> {chaveFormatada}"] = ciclos;
                 } else {
-                    // Se a instrução não estiver na tabela, pode ser registrada como "Desconhecida" com ciclos 1
+                    // Instrução não reconhecida
                     resultado[$"{linhaLimpa} ==> {linhaLimpa}"] = 1;
                 }
             }
 
             return resultado;
+        }
+
+        public static (string instrucao, List<string> Operands) ParseInstrucao(string linha) {
+            linha = linha.Split('#')[0].Trim();  // Etapa 1: Remover comentários
+            if (string.IsNullOrWhiteSpace(linha))
+                return (null, new List<string>());
+
+            // Etapa 2: Separar a instrução e operandos
+            string[] partes = linha.Split(new[] { ' ', '\t' }, 2, StringSplitOptions.RemoveEmptyEntries);
+            if (partes.Length == 0)
+                return (null, new List<string>());
+
+            string instrucao = partes[0].ToLower();
+            List<string> operands = new List<string>();
+
+            if (partes.Length > 1) {
+                // Etapa 3: Separar os operandos por vírgula ou ponto
+                string[] brutos = partes[1].Split(new[] { ',', '.' }, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var bruto in brutos) {
+                    string op = bruto.Trim();
+
+                    // Etapa 4: Verificação para operandos entre parênteses
+                    if (op.Contains('(') && op.Contains(')')) {
+                        int indexAbre = op.IndexOf('(');
+                        int indexFecha = op.IndexOf(')');
+
+                        if (indexAbre >= 0 && indexFecha > indexAbre) {
+                            string offset = op.Substring(0, indexAbre);  // Separar offset
+                            string baseReg = op.Substring(indexAbre + 1, indexFecha - indexAbre - 1);  // Separar base
+
+                            if (!string.IsNullOrWhiteSpace(offset))
+                                operands.Add(offset);  // Adicionar offset
+
+                            if (!string.IsNullOrWhiteSpace(baseReg))
+                                operands.Add(baseReg);  // Adicionar base
+                        } else {
+                            operands.Add(op);  // Se não conseguir separar corretamente, adicionar o valor bruto
+                        }
+                    } else {
+                        operands.Add(op);  // Adicionar o operando se não houver parênteses
+                    }
+                }
+            }
+
+            return (instrucao, operands);
+        }
+
+
+        public void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels) {
+            switch (instrucao) {
+                case "add":
+                    registradores[Operands[0]] = registradores[Operands[1]] + registradores[Operands[2]];
+                    break;
+
+                case "sub":
+                    registradores[Operands[0]] = registradores[Operands[1]] - registradores[Operands[2]];
+                    break;
+
+                case "addi":
+                    registradores[Operands[0]] = registradores[Operands[1]] + int.Parse(Operands[2]);
+                    break;
+
+                case "lw":
+                    if (Operands.Count < 3)
+                        throw new ArgumentException("Operandos insuficientes para 'lw'. Esperado: destino, offset, base");
+
+                    string destino = Operands[0];
+                    int offset = int.Parse(Operands[1]);
+                    string baseReg = Operands[2];
+                    int endereco = registradores[baseReg] + offset;
+
+                    int valor = memoria.LerPalavra(endereco);
+                    Console.WriteLine($"[lw] Carregando memória[{endereco}] = {valor} em {destino}");
+
+                    registradores[destino] = valor;
+                    break;
+
+                case "sw":
+                    memoria.EscreverPalavra(registradores[Operands[2]] + int.Parse(Operands[1]), registradores[Operands[0]]);
+                    break;
+
+                case "lh":
+                    registradores[Operands[0]] = memoria.LerMeiaPalavra(registradores[Operands[2]] + int.Parse(Operands[1]));
+                    break;
+
+                case "sh":
+                    memoria.EscreverMeiaPalavra(registradores[Operands[2]] + int.Parse(Operands[1]), registradores[Operands[0]]);
+                    break;
+
+                case "lb":
+                    registradores[Operands[0]] = memoria.LerByte(registradores[Operands[2]] + int.Parse(Operands[1]));
+                    break;
+
+                case "sb":
+                    memoria.EscreverByte(registradores[Operands[2]] + int.Parse(Operands[1]), registradores[Operands[0]]);
+                    break;
+
+                case "and":
+                    registradores[Operands[0]] = registradores[Operands[1]] & registradores[Operands[2]];
+                    break;
+
+                case "or":
+                    registradores[Operands[0]] = registradores[Operands[1]] | registradores[Operands[2]];
+                    break;
+
+                case "nor":
+                    registradores[Operands[0]] = ~(registradores[Operands[1]] | registradores[Operands[2]]);
+                    break;
+
+                case "andi":
+                    registradores[Operands[0]] = registradores[Operands[1]] & int.Parse(Operands[2]);
+                    break;
+
+                case "ori":
+                    registradores[Operands[0]] = registradores[Operands[1]] | int.Parse(Operands[2]);
+                    break;
+
+                case "sll":
+                    registradores[Operands[0]] = registradores[Operands[1]] << int.Parse(Operands[2]);
+                    break;
+
+                case "srl":
+                    registradores[Operands[0]] = (int)((uint)registradores[Operands[1]] >> int.Parse(Operands[2]));
+                    break;
+
+                case "beq":
+                    if (registradores[Operands[0]] == registradores[Operands[1]]) {
+                        if (labels.TryGetValue(Operands[2], out int destinoLabelBeq)) {
+                            registradores["PC"] = destinoLabelBeq;
+                        } else {
+                            Console.WriteLine($"Erro: Rótulo '{Operands[2]}' não encontrado.");
+                        }
+                    } else {
+                        registradores["PC"] += 4;
+                    }
+                    break;
+
+                case "bne":
+                    if (registradores[Operands[0]] != registradores[Operands[1]]) {
+                        if (labels.TryGetValue(Operands[2], out int destinoLabel)) {
+                            registradores["PC"] = destinoLabel;
+                        } else {
+                            Console.WriteLine($"Erro: Rótulo '{Operands[2]}' não encontrado.");
+                        }
+                    } else {
+                        registradores["PC"] += 4;
+                    }
+                    break;
+
+                case "slt":
+                    registradores[Operands[0]] = registradores[Operands[1]] < registradores[Operands[2]] ? 1 : 0;
+                    break;
+
+                case "sltu":
+                    registradores[Operands[0]] = (uint)registradores[Operands[1]] < (uint)registradores[Operands[2]] ? 1 : 0;
+                    break;
+
+                case "slti":
+                    registradores[Operands[0]] = registradores[Operands[1]] < int.Parse(Operands[2]) ? 1 : 0;
+                    break;
+
+                case "sltiu":
+                    registradores[Operands[0]] = (uint)registradores[Operands[1]] < (uint)int.Parse(Operands[2]) ? 1 : 0;
+                    break;
+
+                case "j":
+                    // Verifique se o rótulo existe no dicionário
+                    if (labels.TryGetValue(Operands[0], out int linhaSalto)) {
+                        registradores["PC"] = linhaSalto; // Atualiza o PC para a linha do rótulo
+                    } else {
+                        Console.WriteLine($"Erro: Rótulo '{Operands[0]}' não encontrado.");
+                    }
+                    break;
+
+                case "jr":
+                    registradores["PC"] = registradores[Operands[0]];
+                    break;
+
+                case "jal":
+                    registradores["$ra"] = registradores["PC"] + 4;
+                    registradores["PC"] = int.Parse(Operands[0]);
+                    break;
+
+                default:
+                    throw new Exception($"Instrução '{instrucao}' não reconhecida.");
+            }
         }
     }
 }

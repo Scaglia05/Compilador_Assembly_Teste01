@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Compilador_Assembly_Teste01.Classes {
     public class Instrucoes {
 
-        public static Dictionary<string, int> ParseWordsToArray(string filePath, int TipoI, int TipoJ, int TipoR) {
+        public static Dictionary<string, int> ParseWordsToArray(string filePath, int TipoI, int TipoJ, int TipoR, decimal tempoClockUnicoSegundos) {
             var resultado = new Dictionary<string, int>();
             var linhas = File.ReadAllLines(filePath);
 
@@ -39,6 +39,12 @@ namespace Compilador_Assembly_Teste01.Classes {
 
                     // Adicionar ao dicionário
                     resultado[$"{linhaLimpa} ==> {chaveFormatada}"] = ciclos;
+
+                    // Aguarda o tempo equivalente aos ciclos (tempoClockUnicoSegundos é o tempo por ciclo)
+                    int delayMs = (int)(tempoClockUnicoSegundos * 1000m * ciclos);  // Multiplica pelo número de ciclos
+                    if (delayMs > 0)
+                        Thread.Sleep(delayMs);  
+
                 } else {
                     // Instrução não reconhecida
                     resultado[$"{linhaLimpa} ==> {linhaLimpa}"] = 1;

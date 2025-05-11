@@ -16,8 +16,8 @@ if (!File.Exists(filePath)) {
 }
 
 // Passo 2: Solicitar o clock em Hz
-Console.WriteLine("Digite o clock em Hz (ex: 1000000 para 1 MHz):");
-if (!int.TryParse(Console.ReadLine(), out int clockHz) || clockHz <= 0) {
+Console.WriteLine("Digite o clock em MHz (ex: 1000000Hz para 1 MHz):");
+if (!decimal.TryParse(Console.ReadLine(), out decimal clockMHz) || clockMHz <= 0) {
     Console.WriteLine("Erro: O valor do clock deve ser um número positivo.");
     return;
 }
@@ -41,9 +41,13 @@ if (!int.TryParse(Console.ReadLine(), out int cyclesJ) || cyclesJ <= 0) {
     return;
 }
 
+decimal tempoClockUnicoSegundos = 1m / (clockMHz * 1_000_000m);
+// Resultado: 0.00000001s (10 nanossegundos)
+
 // Exibir os valores inseridos
 Console.WriteLine($"Arquivo: {filePath}");
-Console.WriteLine($"Clock: {clockHz} Hz");
+Console.WriteLine($"Clock: {clockMHz} MHz");
+Console.WriteLine($"Tempo de um ciclo de clock: {tempoClockUnicoSegundos} segundos");
 Console.WriteLine($"Ciclos tipo R: {cyclesR}");
 Console.WriteLine($"Ciclos tipo I: {cyclesI}");
 Console.WriteLine($"Ciclos tipo J: {cyclesJ}");
@@ -54,7 +58,7 @@ var labels = new Dictionary<string, int>();
 var registradores = Registradores.CriarRegistradores();
 
 // Passo 4: Utilizar o ParseWordsToArray para obter o dicionário de ciclos e instruções
-var ciclosInstrucoes = InstrucoesApp.ParseWordsToArray(filePath, cyclesI, cyclesJ, cyclesR);
+var ciclosInstrucoes = InstrucoesApp.ParseWordsToArray(filePath, cyclesI, cyclesJ, cyclesR, tempoClockUnicoSegundos);
 
 // Exibir o dicionário de instruções com ciclos
 Console.WriteLine("Instruções com ciclos:");
@@ -85,7 +89,6 @@ InstrucoesApp instrucoes = new InstrucoesApp();
 // Configurar o Program Counter (PC)
 int pc = 0;
 
-// Segunda leitura: executar as instruções
 while (pc < linhasPrograma.Length) {
     var linha = linhasPrograma[pc].Trim();
 
@@ -94,12 +97,9 @@ while (pc < linhasPrograma.Length) {
         continue;
     }
 
-    // Usando o ParseInstrucao para separar a instrução e os operandos
     var (instrucao, operandos) = InstrucoesApp.ParseInstrucao(linha);
 
-    // Verifica se a instrução e operandos foram corretamente extraídos
     if (!string.IsNullOrEmpty(instrucao) && operandos != null) {
-        // Executar a instrução
         instrucoes.Executar(instrucao, operandos, registradores, memoria, labels, pc);
 
         if (instrucao.StartsWith("j")) {
@@ -111,7 +111,7 @@ while (pc < linhasPrograma.Length) {
                 break;
             }
         } else if (instrucao.StartsWith("b")) {
-            pc = registradores["PC"]; 
+            pc = registradores["PC"];
         } else {
             pc++;
         }

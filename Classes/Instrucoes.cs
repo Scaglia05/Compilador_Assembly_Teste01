@@ -100,7 +100,7 @@ namespace Compilador_Assembly_Teste01.Classes {
 
 
         public void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels, int pc, Dictionary<string, int> ciclosInstrucoes, decimal tempoClockUnicoSegundos) {
-            // Toalização de instrução
+            // Totalização de instrução
             Totalizador.TotalInstrucoes++;
 
             // Verifica se a instrução existe no dicionário de ciclos e pega o número de ciclos
@@ -119,6 +119,17 @@ namespace Compilador_Assembly_Teste01.Classes {
 
                 // Você pode imprimir ou monitorar o tempo total a cada execução, se necessário
                 Console.WriteLine($"Instrução: {instrucao}, Ciclos: {ciclos}, Tempo gasto: {tempoInstrucaoSegundos} segundos, Tempo Total: {Totalizador.TempoTotalSegundos} segundos");
+
+                // Mostra o estado dos registradores e da memória para cada iteração
+                MostrarEstadoRegistradoresEMemoria(registradores, memoria, pc);
+
+                // Converte a instrução para binário e hexadecimal e exibe
+                string instrucaoBinario = ConverterInstrucaoParaBinario(instrucao);
+                string instrucaoHexadecimal = ConverterInstrucaoParaHexadecimal(instrucao);
+
+                Console.WriteLine($"Instrução em Binário: {instrucaoBinario}");
+                Console.WriteLine($"Instrução em Hexadecimal: {instrucaoHexadecimal}");
+
             } else {
                 Console.WriteLine($"Aviso: Instrução '{instrucao}' não tem ciclo definido. Ignorada no totalizador.");
             }
@@ -265,6 +276,37 @@ namespace Compilador_Assembly_Teste01.Classes {
                 Console.WriteLine($"Erro: Label '{label}' não encontrada.");
                 return pc + 4;  // Retorna o próximo endereço de PC (caso não encontre a label)
             }
+        }
+
+
+        // Método para mostrar o estado dos registradores e da memória
+        public void MostrarEstadoRegistradoresEMemoria(Dictionary<string, int> registradores, Memoria memoria, int pc) {
+            Console.WriteLine($"PC: {pc}");
+
+            Console.WriteLine("Estado dos Registradores:");
+            foreach (var registrador in registradores) {
+                Console.WriteLine($"  {registrador.Key}: {registrador.Value}");
+            }
+
+            Console.WriteLine("Estado da Memória:");
+            memoria.MostrarEstadoMemoria(16);  // Mostra os primeiros 16 endereços de memória, você pode ajustar conforme necessário
+        }
+
+
+        // Método para converter a instrução em binário (exemplo simples)
+        public string ConverterInstrucaoParaBinario(string instrucao) {
+            // Implementação fictícia para ilustrar
+            // Aqui você deve mapear a instrução para sua representação binária conforme sua arquitetura
+            string instrucaoBinaria = "10101010101010101010101010101010"; // Exemplo fictício
+            return instrucaoBinaria;
+        }
+
+        // Método para converter a instrução em hexadecimal (exemplo simples)
+        public string ConverterInstrucaoParaHexadecimal(string instrucao) {
+            // Implementação fictícia para ilustrar
+            // Aqui você deve mapear a instrução para sua representação hexadecimal conforme sua arquitetura
+            string instrucaoHexadecimal = "0xAAAAAAA"; // Exemplo fictício
+            return instrucaoHexadecimal;
         }
     }
 }

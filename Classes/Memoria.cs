@@ -33,5 +33,12 @@ namespace Compilador_Assembly_Teste01.Classes {
         public void EscreverByte(int endereco, int valor) {
             memoria[endereco] = (byte)valor;
         }
+
+        // Método para mostrar o estado da memória (exibindo os valores em endereços específicos)
+        public void MostrarEstadoMemoria(int numEnderecos = 16) {
+            for (int i = 0; i < numEnderecos; i++) {
+                Console.WriteLine($"Endereço {i:D4}: {memoria[i]:X2}");
+            }
+        }
     }
 }

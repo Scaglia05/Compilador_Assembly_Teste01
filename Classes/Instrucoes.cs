@@ -174,24 +174,19 @@ namespace Compilador_Assembly_Teste01.Classes {
 
                 case "beq":
                     if (registradores[Operands[0]] == registradores[Operands[1]]) {
-                        if (labels.TryGetValue(Operands[2], out int destinoLabelBeq)) {
-                            registradores["PC"] = destinoLabelBeq;
-                        } else {
-                            Console.WriteLine($"Erro: Rótulo '{Operands[2]}' não encontrado.");
-                        }
+                        registradores["PC"] = ProcessarSalto(Operands, registradores["PC"], labels);
                     } else {
+                        // Caso contrário, o PC é incrementado normalmente
                         registradores["PC"] += 4;
                     }
                     break;
 
                 case "bne":
                     if (registradores[Operands[0]] != registradores[Operands[1]]) {
-                        if (labels.TryGetValue(Operands[2], out int destinoLabel)) {
-                            registradores["PC"] = destinoLabel;
-                        } else {
-                            Console.WriteLine($"Erro: Rótulo '{Operands[2]}' não encontrado.");
-                        }
+                        // Se os registradores forem diferentes, chama o método para processar o salto
+                        registradores["PC"] = ProcessarSalto(Operands, registradores["PC"], labels);
                     } else {
+                        // Caso contrário, o PC é incrementado normalmente
                         registradores["PC"] += 4;
                     }
                     break;
@@ -232,6 +227,16 @@ namespace Compilador_Assembly_Teste01.Classes {
 
                 default:
                     throw new Exception($"Instrução '{instrucao}' não reconhecida.");
+            }
+        }
+
+        public static int ProcessarSalto(List<string> operandos, int pc, Dictionary<string, int> labels) {
+            string label = operandos.LastOrDefault();  // Pega o último operando, que é a label
+            if (labels.ContainsKey(label)) {
+                return labels[label];  // Retorna o endereço da label de destino
+            } else {
+                Console.WriteLine($"Erro: Label '{label}' não encontrada.");
+                return pc + 4;  // Retorna o próximo endereço de PC (caso não encontre a label)
             }
         }
     }

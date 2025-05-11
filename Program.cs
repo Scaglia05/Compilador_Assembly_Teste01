@@ -102,7 +102,6 @@ while (pc < linhasPrograma.Length) {
         // Executar a instrução
         instrucoes.Executar(instrucao, operandos, registradores, memoria, labels);
 
-        // Se for uma instrução do tipo J, o PC será alterado pelo valor do jump
         if (instrucao.StartsWith("j")) {
             string label = operandos.FirstOrDefault();  // A label para o salto
             if (labels.ContainsKey(label)) {
@@ -111,9 +110,11 @@ while (pc < linhasPrograma.Length) {
                 Console.WriteLine($"Erro: Label {label} não encontrada.");
                 break;
             }
+        } else if (instrucao.StartsWith("b")) {
+            // O registrador "PC" já foi atualizado dentro da instrução "beq" ou "bne"
+            pc = registradores["PC"];
         } else {
-            // Caso contrário, incrementa o PC normalmente
-            pc++;
+            pc++;  // Instrução comum
         }
     } else {
         Console.WriteLine($"Erro ao processar a linha: {linha}. A instrução não foi válida.");

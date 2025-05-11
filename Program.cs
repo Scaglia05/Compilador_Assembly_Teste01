@@ -9,20 +9,17 @@ using static Compilador_Assembly_Teste01.Classes.TabelaInstrucoes;
 Console.WriteLine("Digite o caminho do arquivo:");
 string filePath = Console.ReadLine();
 
-// Verificar se o arquivo existe
 if (!File.Exists(filePath)) {
     Console.WriteLine("Erro: O arquivo especificado não foi encontrado.");
     return;
 }
 
-// Passo 2: Solicitar o clock em Hz
 Console.WriteLine("Digite o clock em MHz (ex: 1000000Hz para 1 MHz):");
 if (!decimal.TryParse(Console.ReadLine(), out decimal clockMHz) || clockMHz <= 0) {
     Console.WriteLine("Erro: O valor do clock deve ser um número positivo.");
     return;
 }
 
-// Passo 3: Solicitar a quantidade de ciclos para as instruções
 Console.WriteLine("Digite a quantidade de ciclos para as instruções tipo R:");
 if (!int.TryParse(Console.ReadLine(), out int cyclesR) || cyclesR <= 0) {
     Console.WriteLine("Erro: O valor de ciclos para instruções tipo R deve ser um número positivo.");
@@ -42,9 +39,7 @@ if (!int.TryParse(Console.ReadLine(), out int cyclesJ) || cyclesJ <= 0) {
 }
 
 decimal tempoClockUnicoSegundos = 1m / (clockMHz * 1_000_000m);
-// Resultado: 0.00000001s (10 nanossegundos)
 
-// Exibir os valores inseridos
 Console.WriteLine($"Arquivo: {filePath}");
 Console.WriteLine($"Clock: {clockMHz} MHz");
 Console.WriteLine($"Tempo de um ciclo de clock: {tempoClockUnicoSegundos} segundos");
@@ -52,55 +47,51 @@ Console.WriteLine($"Ciclos tipo R: {cyclesR}");
 Console.WriteLine($"Ciclos tipo I: {cyclesI}");
 Console.WriteLine($"Ciclos tipo J: {cyclesJ}");
 
-// Inicializar memória, registradores e labels
 Memoria memoria = new Memoria();
 var labels = new Dictionary<string, int>();
 var registradores = Registradores.CriarRegistradores();
 
-// Passo 4: Utilizar o ParseWordsToArray para obter o dicionário de ciclos e instruções
 var ciclosInstrucoes = InstrucoesApp.ParseWordsToArray(filePath, cyclesI, cyclesJ, cyclesR, tempoClockUnicoSegundos);
 
-// Exibir o dicionário de instruções com ciclos
 Console.WriteLine("Instruções com ciclos:");
 foreach (var item in ciclosInstrucoes) {
     Console.WriteLine($"{item.Key} => {item.Value} ciclos");
 }
 
-// Ler o programa
 var linhasPrograma = File.ReadAllLines(filePath);
 
-// Primeira leitura: identificar e mapear labels
 for (int i = 0; i < linhasPrograma.Length; i++) {
     var linha = linhasPrograma[i].Trim();
-
-    // Ignora comentários e linhas vazias
     if (string.IsNullOrWhiteSpace(linha) || linha.StartsWith("#")) continue;
-
-    // Verifica se é um label (termina com :)
     if (linha.EndsWith(":")) {
         string nomeLabel = linha.Substring(0, linha.Length - 1).Trim();
-        labels[nomeLabel] = i; // mapeia label para linha do código
+        labels[nomeLabel] = i;
     }
 }
 
-// Instanciar a classe InstrucoesApp (que é um alias para Instrucoes)
 InstrucoesApp instrucoes = new InstrucoesApp();
-
-// Configurar o Program Counter (PC)
 int pc = 0;
+
 
 while (pc < linhasPrograma.Length) {
     var linha = linhasPrograma[pc].Trim();
 
     if (string.IsNullOrWhiteSpace(linha) || linha.StartsWith("#") || linha.EndsWith(":")) {
-        pc++;  // Ignorar linhas vazias, comentários ou labels
+        pc++;
         continue;
     }
 
     var (instrucao, operandos) = InstrucoesApp.ParseInstrucao(linha);
 
     if (!string.IsNullOrEmpty(instrucao) && operandos != null) {
-        instrucoes.Executar(instrucao, operandos, registradores, memoria, labels, pc);
+        Totalizador.TotalInstrucoes++;
+
+        if (ciclosInstrucoes.TryGetValue(instrucao, out int ciclosInstrucao)) {
+            Totalizador.TotalCiclos += ciclosInstrucao;
+            //Totalizador.TempoTotalSegundos += ciclosInstrucao * tempoClockUnicoSegundos;
+        }
+
+        instrucoes.Executar(instrucao, operandos, registradores, memoria, labels, pc, ciclosInstrucoes, tempoClockUnicoSegundos);
 
         if (instrucao.StartsWith("j")) {
             string label = operandos.FirstOrDefault();
@@ -121,3 +112,9 @@ while (pc < linhasPrograma.Length) {
         break;
     }
 }
+
+Console.WriteLine($"\nTotais:");
+Console.WriteLine($"Total de Instruções Executadas: {Totalizador.TotalInstrucoes}");
+Console.WriteLine($"Total de Ciclos: {Totalizador.TotalCiclos}");
+Console.WriteLine($"Tempo Total Estimado de Execução: {Totalizador.TempoTotalSegundos} segundos");
+

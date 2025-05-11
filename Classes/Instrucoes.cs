@@ -13,6 +13,9 @@ namespace Compilador_Assembly_Teste01.Classes {
             var resultado = new Dictionary<string, int>();
             var linhas = File.ReadAllLines(filePath);
 
+            // Atualizar os ciclos antes de processar as instruções
+            TabelaInstrucoes.AtualizarCiclos(TipoR, TipoI, TipoJ);
+
             foreach (var linha in linhas) {
                 string linhaLimpa = linha.Split('#')[0].Trim(); // Remove comentários
 
@@ -25,14 +28,9 @@ namespace Compilador_Assembly_Teste01.Classes {
                     continue;
 
                 // Verifica o tipo da instrução
-                if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out string tipo)) {
-                    // Ajuste no cálculo dos ciclos
-                    int ciclos = tipo switch {
-                        "R" => TipoR,
-                        "I" => TipoI,
-                        "J" => TipoJ,
-                        _ => 1
-                    };
+                if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var tipo)) {
+                    // Ajuste no cálculo dos ciclos usando os valores atualizados
+                    int ciclos = tipo.Item2;  // Agora, tipo.Item2 tem o número de ciclos correto (atualizado)
 
                     // Formatar a chave com a instrução e operandos
                     string chaveFormatada = $"{instrucao} ({string.Join(", ", operandos)})";
@@ -43,8 +41,7 @@ namespace Compilador_Assembly_Teste01.Classes {
                     // Aguarda o tempo equivalente aos ciclos (tempoClockUnicoSegundos é o tempo por ciclo)
                     int delayMs = (int)(tempoClockUnicoSegundos * 1000m * ciclos);  // Multiplica pelo número de ciclos
                     if (delayMs > 0)
-                        Thread.Sleep(delayMs);  
-
+                        Thread.Sleep(delayMs);
                 } else {
                     // Instrução não reconhecida
                     resultado[$"{linhaLimpa} ==> {linhaLimpa}"] = 1;
@@ -53,6 +50,7 @@ namespace Compilador_Assembly_Teste01.Classes {
 
             return resultado;
         }
+
 
         public static (string instrucao, List<string> Operands) ParseInstrucao(string linha) {
             linha = linha.Split('#')[0].Trim();  // Etapa 1: Remover comentários
@@ -101,7 +99,30 @@ namespace Compilador_Assembly_Teste01.Classes {
         }
 
 
-        public void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels, int pc) {
+        public void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels, int pc, Dictionary<string, int> ciclosInstrucoes, decimal tempoClockUnicoSegundos) {
+            // Toalização de instrução
+            Totalizador.TotalInstrucoes++;
+
+            // Verifica se a instrução existe no dicionário de ciclos e pega o número de ciclos
+            if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var tipoEValores)) {
+                // O Item2 da tupla contém o número de ciclos
+                int ciclos = tipoEValores.Item2;
+
+                // Totaliza os ciclos
+                Totalizador.TotalCiclos += ciclos;
+
+                // Calcula o tempo gasto para a instrução (tempo por ciclo multiplicado pelos ciclos)
+                decimal tempoInstrucaoSegundos = tempoClockUnicoSegundos * ciclos;
+
+                // Atualiza o tempo total de execução
+                Totalizador.TempoTotalSegundos += tempoInstrucaoSegundos;
+
+                // Você pode imprimir ou monitorar o tempo total a cada execução, se necessário
+                Console.WriteLine($"Instrução: {instrucao}, Ciclos: {ciclos}, Tempo gasto: {tempoInstrucaoSegundos} segundos, Tempo Total: {Totalizador.TempoTotalSegundos} segundos");
+            } else {
+                Console.WriteLine($"Aviso: Instrução '{instrucao}' não tem ciclo definido. Ignorada no totalizador.");
+            }
+
             switch (instrucao) {
                 case "add":
                     registradores[Operands[0]] = registradores[Operands[1]] + registradores[Operands[2]];

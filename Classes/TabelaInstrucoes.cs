@@ -8,19 +8,17 @@ namespace Compilador_Assembly_Teste01.Classes {
     public class TabelaInstrucoes {
         public Dictionary<string, int> registradores = new();
 
-        public static Dictionary<string, string> Instrucoes = new()
+        public static Dictionary<string, (string, int)> Instrucoes = new()
         {
-            { "add",  "R" }, { "sub",  "R"}, { "and",  "R"}, { "or",   "R"},
-            { "nor",  "R"}, { "sll",  "R"}, { "srl",  "R"}, { "jr",   "R"},
-            { "slt",  "R"}, { "sltu", "R"},
-
-            { "addi", "I"}, { "andi", "I"}, { "ori",  "I"},
-            { "lw",   "I"}, { "sw",   "I"}, { "lh",   "I"},
-            { "sh",   "I"}, { "lb",   "I"}, { "sb",   "I"},
-            { "beq",  "I"}, { "bne",  "I"}, { "slti", "I"}, { "sltiu", "I"},
-
-            { "j",    "J" }, { "jal",  "J" }
-
+            { "add",  ("R", 0) }, { "sub",  ("R", 0) }, { "and",  ("R", 0) },
+            { "or",   ("R", 0) }, { "nor",  ("R", 0) }, { "sll",  ("R", 0) },
+            { "srl",  ("R", 0) }, { "jr",   ("R", 0) }, { "slt",  ("R", 0) },
+            { "sltu", ("R", 0) }, { "addi", ("I", 0) }, { "andi", ("I", 0) },
+            { "ori",  ("I", 0) }, { "lw",   ("I", 0) }, { "sw",   ("I", 0) },
+            { "lh",   ("I", 0) }, { "sh",   ("I", 0) }, { "lb",   ("I", 0) },
+            { "sb",   ("I", 0) }, { "beq",  ("I", 0) }, { "bne",  ("I", 0) },
+            { "slti", ("I", 0) }, { "sltiu",("I", 0) }, { "j",    ("J", 0) },
+            { "jal",  ("J", 0) }
         };
 
         public static class Registradores {
@@ -38,6 +36,22 @@ namespace Compilador_Assembly_Teste01.Classes {
                     { "$gp", 0 }, { "$sp", 0 }, { "$fp", 0 }, { "$ra", 0 },
                     { "PC", 0 }
                 };
+            }
+        }
+
+        public static void AtualizarCiclos(int TipoR, int TipoI, int TipoJ) {
+            // Atualiza os ciclos no dicionário para cada tipo de instrução
+            foreach (var chave in Instrucoes.Keys.ToList()) {
+                var tipoAtual = Instrucoes[chave].Item1;  // Tipo: "R", "I", "J"
+
+                // Substitui o valor de ciclos com base no tipo
+                if (tipoAtual == "R") {
+                    Instrucoes[chave] = ("R", TipoR);  // Atualiza para o valor de ciclos para tipo "R"
+                } else if (tipoAtual == "I") {
+                    Instrucoes[chave] = ("I", TipoI);  // Atualiza para o valor de ciclos para tipo "I"
+                } else if (tipoAtual == "J") {
+                    Instrucoes[chave] = ("J", TipoJ);  // Atualiza para o valor de ciclos para tipo "J"
+                }
             }
         }
 

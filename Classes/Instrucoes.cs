@@ -38,10 +38,11 @@ namespace Compilador_Assembly_Teste01.Classes {
                     // Adicionar ao dicionário
                     resultado[$"{linhaLimpa} ==> {chaveFormatada}"] = ciclos;
 
-                    // Aguarda o tempo equivalente aos ciclos (tempoClockUnicoSegundos é o tempo por ciclo)
-                    int delayMs = (int)(tempoClockUnicoSegundos * 1000m * ciclos);  // Multiplica pelo número de ciclos
-                    if (delayMs > 0)
-                        Thread.Sleep(delayMs);
+                    //// Aguarda o tempo equivalente aos ciclos (tempoClockUnicoSegundos é o tempo por ciclo)
+                    //int delayMs = (int)(tempoClockUnicoSegundos * 1000m * ciclos);  // Multiplica pelo número de ciclos
+                    //if (delayMs > 0)
+                    //    Thread.Sleep(delayMs);
+
                 } else {
                     // Instrução não reconhecida
                     resultado[$"{linhaLimpa} ==> {linhaLimpa}"] = 1;
@@ -102,6 +103,7 @@ namespace Compilador_Assembly_Teste01.Classes {
         public void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels, int pc, Dictionary<string, int> ciclosInstrucoes, decimal tempoClockUnicoSegundos) {
             // Totalização de instrução
             Totalizador.TotalInstrucoes++;
+            Simulador simulador = new Simulador();
 
             // Verifica se a instrução existe no dicionário de ciclos e pega o número de ciclos
             if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var tipoEValores)) {
@@ -124,8 +126,8 @@ namespace Compilador_Assembly_Teste01.Classes {
                 MostrarEstadoRegistradoresEMemoria(registradores, memoria, pc);
 
                 // Converte a instrução para binário e hexadecimal e exibe
-                string instrucaoBinario = ConverterInstrucaoParaBinario(instrucao);
-                string instrucaoHexadecimal = ConverterInstrucaoParaHexadecimal(instrucao);
+                string instrucaoBinario = simulador.ConverterInstrucaoParaBinario(instrucao, Operands);
+                string instrucaoHexadecimal = simulador.ConverterInstrucaoParaHexadecimal(instrucao, Operands);
 
                 Console.WriteLine($"Instrução em Binário: {instrucaoBinario}");
                 Console.WriteLine($"Instrução em Hexadecimal: {instrucaoHexadecimal}");
@@ -290,23 +292,6 @@ namespace Compilador_Assembly_Teste01.Classes {
 
             Console.WriteLine("Estado da Memória:");
             memoria.MostrarEstadoMemoria(16);  // Mostra os primeiros 16 endereços de memória, você pode ajustar conforme necessário
-        }
-
-
-        // Método para converter a instrução em binário (exemplo simples)
-        public string ConverterInstrucaoParaBinario(string instrucao) {
-            // Implementação fictícia para ilustrar
-            // Aqui você deve mapear a instrução para sua representação binária conforme sua arquitetura
-            string instrucaoBinaria = "10101010101010101010101010101010"; // Exemplo fictício
-            return instrucaoBinaria;
-        }
-
-        // Método para converter a instrução em hexadecimal (exemplo simples)
-        public string ConverterInstrucaoParaHexadecimal(string instrucao) {
-            // Implementação fictícia para ilustrar
-            // Aqui você deve mapear a instrução para sua representação hexadecimal conforme sua arquitetura
-            string instrucaoHexadecimal = "0xAAAAAAA"; // Exemplo fictício
-            return instrucaoHexadecimal;
         }
     }
 }

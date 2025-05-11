@@ -87,6 +87,13 @@ while (pc < linhasPrograma.Length) {
 
         instrucoes.Executar(instrucao, operandos, registradores, memoria, labels, pc, ciclosInstrucoes, tempoClockUnicoSegundos);
 
+        if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var dicInstrucoes)) {
+            int ciclos = dicInstrucoes.Item2;
+            decimal tempoInstrucaoSegundos = ciclos * tempoClockUnicoSegundos;
+            Simulador.AguardarTempo(tempoInstrucaoSegundos);
+        }
+
+
         if (instrucao.StartsWith("j")) {
             string label = operandos.FirstOrDefault();
             if (labels.ContainsKey(label)) {

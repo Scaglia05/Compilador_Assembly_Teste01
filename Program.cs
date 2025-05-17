@@ -47,11 +47,12 @@ Console.WriteLine($"Clock: {clockMHz} MHz");
 Console.WriteLine($"Tempo de um ciclo de clock: {tempoClockUnicoSegundos} segundos");
 Console.WriteLine($"Ciclos tipo R: {cyclesR} | Ciclos tipo I: {cyclesI} | Ciclos tipo J: {cyclesJ}");
 
+MemoriaInstrucao memoriaInstrucao = new();
 Memoria memoria = new Memoria();
 var labels = new Dictionary<string, int>();
 var registradores = Registradores.CriarRegistradores();
 
-var ciclosInstrucoes = InstrucoesApp.ParseWordsToArray(filePath, cyclesI, cyclesJ, cyclesR, tempoClockUnicoSegundos);
+var ciclosInstrucoes = InstrucoesApp.ParseWordsToArray(filePath, cyclesI, cyclesJ, cyclesR, tempoClockUnicoSegundos, memoriaInstrucao);
 
 // Loop para processar as instruções
 var linhasPrograma = File.ReadAllLines(filePath);
@@ -85,7 +86,7 @@ while (pc < linhasPrograma.Length) {
             Totalizador.TotalCiclos += ciclosInstrucao;
         }
 
-        instrucoes.Executar(instrucao, operandos, registradores, memoria, labels, pc, ciclosInstrucoes, tempoClockUnicoSegundos);
+        instrucoes.Executar(instrucao, operandos, registradores, memoria, labels, pc, ciclosInstrucoes, tempoClockUnicoSegundos, memoriaInstrucao);
 
         if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var dicInstrucoes)) {
             int ciclos = dicInstrucoes.Item2;

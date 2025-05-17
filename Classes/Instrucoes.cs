@@ -9,12 +9,14 @@ using System.Threading.Tasks;
 namespace Compilador_Assembly_Teste01.Classes {
     public class Instrucoes {
 
-        public static Dictionary<string, int> ParseWordsToArray(string filePath, int TipoI, int TipoJ, int TipoR, decimal tempoClockUnicoSegundos) {
+        public static Dictionary<string, int> ParseWordsToArray(string filePath, int TipoI, int TipoJ, int TipoR, decimal tempoClockUnicoSegundos, MemoriaInstrucao memoriaInstrucao) {
             var resultado = new Dictionary<string, int>();
             var linhas = File.ReadAllLines(filePath);
+            int endereco = 0;
 
             // Atualizar os ciclos antes de processar as instruções
             TabelaInstrucoes.AtualizarCiclos(TipoR, TipoI, TipoJ);
+            Simulador simulador = new Simulador();
 
             foreach (var linha in linhas) {
                 string linhaLimpa = linha.Split('#')[0].Trim(); // Remove comentários
@@ -23,6 +25,16 @@ namespace Compilador_Assembly_Teste01.Classes {
                     continue;
 
                 var (instrucao, operandos) = ParseInstrucao(linhaLimpa); // Usa o parser robusto
+                                                                         // Converte a instrução para hexadecimal
+                string conversaoHexa = simulador.ConverterInstrucaoParaHexadecimal(instrucao, operandos);
+
+                // Converte o hexadecimal string (ex: "0x20100001") para int
+                int valorDecimal = Convert.ToInt32(conversaoHexa, 16);
+
+                // Escreve na memória de instruções como uma palavra (4 bytes)
+                memoriaInstrucao.EscreverPalavra(endereco, valorDecimal);
+
+                endereco += 4; // próximo endereço
 
                 if (string.IsNullOrEmpty(instrucao))
                     continue;
@@ -100,7 +112,7 @@ namespace Compilador_Assembly_Teste01.Classes {
         }
 
 
-        public void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels, int pc, Dictionary<string, int> ciclosInstrucoes, decimal tempoClockUnicoSegundos) {
+        public void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels, int pc, Dictionary<string, int> ciclosInstrucoes, decimal tempoClockUnicoSegundos, MemoriaInstrucao memoriaInstrucao) {
             // Totalização de instrução
             Totalizador.TotalInstrucoes++;
             Simulador simulador = new Simulador();
@@ -122,15 +134,15 @@ namespace Compilador_Assembly_Teste01.Classes {
                 // Você pode imprimir ou monitorar o tempo total a cada execução, se necessário
                 Console.WriteLine($"Instrução: {instrucao}, Ciclos: {ciclos}, Tempo gasto: {tempoInstrucaoSegundos} segundos, Tempo Total: {Totalizador.TempoTotalSegundos} segundos");
 
-                // Mostra o estado dos registradores e da memória para cada iteração
-                MostrarEstadoRegistradoresEMemoria(registradores, memoria, pc);
 
                 // Converte a instrução para binário e hexadecimal e exibe
                 string instrucaoBinario = simulador.ConverterInstrucaoParaBinario(instrucao, Operands);
                 string instrucaoHexadecimal = simulador.ConverterInstrucaoParaHexadecimal(instrucao, Operands);
 
-                Console.WriteLine($"Instrução em Binário: {instrucaoBinario}");
-                Console.WriteLine($"Instrução em Hexadecimal: {instrucaoHexadecimal}");
+                // Mostra o estado dos registradores e da memória para cada iteração
+                MostrarEstadoRegistradoresEMemoria(registradores, memoria, instrucaoHexadecimal, memoriaInstrucao);
+                Console.WriteLine($"Instrução Binária: {instrucaoBinario}");
+                Console.WriteLine($"Instrução Hexadecimal: {instrucaoHexadecimal}");
 
             } else {
                 Console.WriteLine($"Aviso: Instrução '{instrucao}' não tem ciclo definido. Ignorada no totalizador.");
@@ -282,8 +294,8 @@ namespace Compilador_Assembly_Teste01.Classes {
 
 
         // Método para mostrar o estado dos registradores e da memória
-        public void MostrarEstadoRegistradoresEMemoria(Dictionary<string, int> registradores, Memoria memoria, int pc) {
-            Console.WriteLine($"PC: {pc}");
+        public void MostrarEstadoRegistradoresEMemoria(Dictionary<string, int> registradores, Memoria memoria, string instrucaoHexadecimal, MemoriaInstrucao memoriaInstrucao) {
+            Console.WriteLine($"PC: {instrucaoHexadecimal}");
 
             Console.WriteLine("Estado dos Registradores:");
             foreach (var registrador in registradores) {
@@ -291,7 +303,9 @@ namespace Compilador_Assembly_Teste01.Classes {
             }
 
             Console.WriteLine("Estado da Memória:");
-            memoria.MostrarEstadoMemoria(16);  // Mostra os primeiros 16 endereços de memória, você pode ajustar conforme necessário
+            memoria.MostrarEstadoMemoriaDados();  // Mostra os primeiros 16 endereços de memória, você pode ajustar conforme necessário
+            memoriaInstrucao.MostrarEstadoMemoriaDados();
+
         }
     }
 }

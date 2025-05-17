@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Compilador_Assembly_Teste01.Classes {
-    public class Memoria {
+    public class MemoriaInstrucao {
         private readonly Dictionary<int, byte> memoria = new();
 
         public int LerPalavra(int endereco) {
@@ -47,14 +47,23 @@ namespace Compilador_Assembly_Teste01.Classes {
         }
 
         public void MostrarEstadoMemoriaDados() {
-            if (!memoria.Any()) {
+            if (memoria == null || !memoria.Any()) {
                 Console.WriteLine("Memória vazia.");
                 return;
             }
 
-            foreach (var par in memoria.OrderBy(e => e.Key)) {
-                Console.WriteLine($"Endereço {par.Key:D4}: {par.Value:X2}");
+            foreach (var grupo in memoria.OrderBy(p => p.Key).GroupBy(p => p.Key / 4)) {
+                int enderecoBase = grupo.First().Key / 4 * 4;
+                byte[] bytes = new byte[4];
+
+                for (int i = 0; i < 4; i++) {
+                    memoria.TryGetValue(enderecoBase + i, out bytes[i]);
+                }
+
+                int palavra = BitConverter.ToInt32(bytes, 0);
+                Console.WriteLine($"Endereço {enderecoBase:D4}: 0x{palavra:X8}");
             }
         }
     }
 }
+

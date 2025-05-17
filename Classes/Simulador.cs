@@ -43,8 +43,8 @@ namespace Compilador_Assembly_Teste01.Classes {
             { "$k0", 26 }, { "$k1", 27 },
             { "$gp", 28 }, { "$sp", 29 }, { "$fp", 30 }, { "$ra", 31 }
         };
-       
-       
+
+
         public string ConverterInstrucaoParaBinario(string instrucao, List<string> operandos) {
             if (!TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var tipoEOpCode))
                 return "00000000000000000000000000000000"; // desconhecido
@@ -117,9 +117,8 @@ namespace Compilador_Assembly_Teste01.Classes {
             "sltiu" => "001011",
             "j" => "000010",
             "jal" => "000011",
-            _ => "000000" // Instruções do tipo R usam opcode 000000
+            _ => "000000"
         };
-
 
         public static int ObterFunct(string instrucao) => instrucao switch {
             "add" => 32,

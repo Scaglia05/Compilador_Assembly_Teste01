@@ -10,6 +10,6 @@ namespace Compilador_Assembly_Teste01.Classes {
         public static int TotalCiclos { get; set; }
         //public static double TempoTotalSegundos => TotalCiclos * ClockSegundos;
         public static decimal TempoTotalSegundos { get; set; }
-        public static double ClockSegundos { get; set; } 
+        public static double ClockSegundos { get; set; }
     }
 }
